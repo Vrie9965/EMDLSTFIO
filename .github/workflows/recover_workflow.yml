@@ -2,12 +2,10 @@ name: Recover Missing Episode Logs
 
 on:
   workflow_dispatch:  # Manual trigger
-  schedule:
-    - cron: '0 0 * * 0'  # Run weekly on Sunday at midnight (optional)
 
 jobs:
   recover-logs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     
     steps:
       - name: Checkout repository

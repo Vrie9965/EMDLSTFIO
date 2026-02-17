@@ -9,6 +9,11 @@ fi
 . "$(dirname "$0")/../config.conf"
 LOG_FILE="$(dirname "$0")/../fb/log.txt"
 
+if [[ -z "${reshare_page_id}" ]]; then
+  echo "INFO: reshare_page_id is blank in config.conf. Skipping random reshare."
+  exit 0
+fi
+
 # Check if log file exists and has content
 if [[ ! -f "$LOG_FILE" ]]; then
   echo "ERROR: Log file not found: $LOG_FILE"
@@ -50,7 +55,7 @@ echo "DEBUG: Message: ${message}"
 echo ""
 
 # First, verify token has access to the page
-page_id="222489564281150"
+page_id="${reshare_page_id}"
 echo "Verifying page access..."
 verify_response=$(curl -s "${FRMENV_API_ORIGIN}/${FRMENV_FBAPI_VER}/me/accounts?access_token=${FRMENV_FBTOKEN}")
 

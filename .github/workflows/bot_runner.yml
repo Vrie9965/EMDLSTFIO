@@ -9,25 +9,34 @@ concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
+      - name: "checkout"
+        uses: actions/checkout@v4
+        
       - name: "ownership check"
         env:
           trig_actor: ${{ github.triggering_actor }}
           repo_ownr: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GIT_TOK }}
         run: |
           case "${trig_actor}" in
             "${repo_ownr}"|github-actions*) : ;;
-            *) printf '%s\n'"Runner prevented to run because the script is executed by an untrusted user \"${trig_actor}\". (Only owner can execute, for security)" >&2 ; exit 1 ;;
+            *) printf '%s\n'"Runner prevented to run because the script is executed by an untrusted user \"${trig_actor}\". (Only owner can execute, for security)" >&2 ; gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}" ;;
           esac
 
       - name: "success checker"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOK }}
         run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+          if [[ "${{ github.event.workflow_run.conclusion }}" != "success" ]]; then
               printf '%s\n' "Exiting... The init banner did not succeed..." >&2
-              exit 1
+              gh run cancel "${{ github.run_id }}" --repo ${{ github.repository }}
           fi
 
       - name: "check latest || (not implemented) dispatches if fails"
@@ -38,7 +47,7 @@ jobs:
           if [ "${LATEST_COMMIT}" != "${GITHUB_SHA}" ]; then
              printf '%s\n' "Current commit is not the latest." >&2
              # curl -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" -X POST -d '{"ref":"'"${{ github.ref }}"'","inputs":{}}' "https://api.github.com/repos/${{ github.repository }}/actions/workflows/process.yml/dispatches"
-            exit 1
+             gh run cancel "${{ github.run_id }}" --repo ${{ github.repository }}
           fi
        
       - name: "check if repo checker have succeed"
@@ -48,21 +57,23 @@ jobs:
           conclusion="$(curl -s -X GET "https://api.github.com/repos/${{ github.repository }}/actions/workflows/repo-checker.yml/runs" -H "Authorization: Bearer ${GITHUB_TOKEN}" | jq -r .workflow_runs[1].conclusion)"
           if [[ "${conclusion}" = "failure" ]]; then
               printf '%s\n' "failed due to repo checker failure." >&2
-              curl -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" -X POST -d '{"ref":"'"${{ github.ref }}"'","inputs":{}}' "https://api.github.com/repos/${{ github.repository }}/actions/workflows/repo-checker.yml/dispatches" -o /dev/null
-              exit 1
+              gh workflow run repo-checker.yml --repo ${{ github.repository }}
+              gh run cancel "${{ github.run_id }}" --repo ${{ github.repository }}
           fi
 
-  sample-bot:
-    runs-on: ubuntu-latest
-    steps:
-      - name: "checkout"
-        uses: actions/checkout@v4
-      
-      - name: "innitialize package"
+      - name: "frameiterator check"
         run: |
-          sudo apt update -y
-          sudo apt upgrade -y
-          sudo apt install imagemagick -y
+          if [[ "$(<./fb/frameiterator)" -gt "$(sed -nE 's/.*total_frame="([^"]*)".*/\1/p' config.conf)" ]]; then
+              printf '%s\n' "trigger.yml disabled, because the posting is finished" >&2
+              gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOK }}
+
+      - name: "initialize package"
+        run: |
+          (echo "set man-db/auto-update false" | sudo debconf-communicate; sudo dpkg-reconfigure man-db) &>/dev/null
+          sudo apt install imagemagick bc -y
 
       - name: "run"
         continue-on-error: true
@@ -72,7 +83,7 @@ jobs:
         run: bash frame_main.sh "${tok_fb}" "${tok_gif}"
 
       - name: "commit changes"
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "stat: Posted!!"
           repository: .

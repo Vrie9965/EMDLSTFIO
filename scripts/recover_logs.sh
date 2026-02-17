@@ -14,11 +14,24 @@ RECOVERED_FILE="$(dirname "$0")/../fb/recovered_log.txt"
 
 # Episodes to recover with their album IDs
 declare -A episode_albums
-episode_albums["01"]="122102865896200694"
-episode_albums["02"]="122119297598200694"
+episode_albums["01"]=""
+episode_albums["02"]=""
 
 # Album for frames 1-100 of Episode 01
-first_frames_album="122102861978200694"
+first_frames_album=""
+
+if [[ -z "${episode_albums["01"]}" || -z "${episode_albums["02"]}" || -z "${first_frames_album}" ]]; then
+  cat > "$RECOVERED_FILE" << EOF
+# Recovery Log - $(date)
+# Recover logs is not configured yet.
+# Set IDs in scripts/recover_logs.sh:
+# - episode_albums["01"]
+# - episode_albums["02"]
+# - first_frames_album
+EOF
+  echo "INFO: Recovery script is not configured yet. Skipping."
+  exit 0
+fi
 
 # Always create recovered file and write header
 cat > "$RECOVERED_FILE" << EOF
@@ -263,8 +276,8 @@ echo "METHOD 6: Searching for missing frames 1-100"
 echo "=========================================="
 echo ""
 
-# Try the original album set ID that was in the first example URLs
-fallback_album="122102861978200694"
+# Try the first-frames album as fallback too
+fallback_album="${first_frames_album}"
 echo "Trying fallback album: $fallback_album"
 echo "# Attempting to find missing frames 1-100 from fallback album" >> "$RECOVERED_FILE"
 

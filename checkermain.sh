@@ -9,8 +9,8 @@
 FRMENV_FBTOKEN="${1:-${FRMENV_FBTOKEN}}"
 FRMENV_GIFTOKEN="${2:-${FRMENV_GIFTOKEN}}"
 
-format_noerr(){ printf '$\\fbox{\\color{#126329}\\textsf{\\normalsize  \\&#x2611; \\kern{0.2cm}\\small  %s  }}$' "${*}" ;}
-format_err(){ printf '$\\fbox{\\color{#82061E}\\textsf{\\normalsize  \\&#x26A0; \\kern{0.2cm}\\small  %s  }}$' "${*}" ;} 
+format_noerr(){ printf '$\\fbox{\\color{#126329}\\textsf{\\normalsize  &#x2611; \\kern{0.2cm}\\small  %s  }}$' "${*}" ;}
+format_err(){ printf '$\\fbox{\\color{#82061E}\\textsf{\\normalsize  &#x26A0; \\kern{0.2cm}\\small  %s  }}$' "${*}" ;} 
 format_table(){ printf '| \x60%s\x60 | %s |\n' "${1}" "${2}" ;}
 
 # Append Header
@@ -30,17 +30,17 @@ checkif(){
 
 sub_check(){
 	if [[ "${sub_posting}" = "1" ]]; then
-		if [[ -z "${subtitle_file}" ]]; then
-			format_table "subtitle_file" "$(format_err "Variable is empty")" && err_state="1"
+		if [[ -z "${FRMENV_COMMENTSUBS_LOCATION}" ]]; then
+			format_table "FRMENV_COMMENTSUBS_LOCATION" "$(format_err "Variable is empty")" && err_state="1"
 			printf '\e[31mERROR\e[0m - %s\n' "Variable is empty" >&2
-		elif [[ ! -e "${FRMENV_SUBS_FILE}" ]]; then
-			format_table "subtitle_file" "$(format_err "File not found")" "subtitle_file" && err_state="1"
-			printf '\e[31mERROR\e[0m - %s\n' "File not found" >&2
-		elif [[ -z "$(<"${FRMENV_SUBS_FILE}")" ]]; then
-			format_table "subtitle_file" "$(format_err "File is empty")" && err_state="1"
-			printf '\e[31mERROR\e[0m - %s\n' "File is empty" >&2
+		elif [[ ! -d "${FRMENV_COMMENTSUBS_LOCATION}" ]]; then
+			format_table "commentsubs" "$(format_err "Directory not found")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "Directory not found" >&2
+		elif ! compgen -G "${FRMENV_COMMENTSUBS_LOCATION}/frame_*.jpg" > /dev/null; then
+			format_table "commentsubs" "$(format_err "No frame_*.jpg files found")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "No frame_*.jpg files found" >&2
 		else
-			format_table "subtitle_file" "$(format_noerr "Passed")"
+			format_table "commentsubs" "$(format_noerr "Passed")"
 		fi
 	fi
 }
