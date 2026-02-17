@@ -359,7 +359,7 @@ else
 fi
 
 # Always show file size
-if [[ -f "$RECOVERED_FILE" ]]; then
-  file_size=$(wc -c < "$RECOVERED_FILE")
-  echo "Recovered log file size: $file_size bytes"
+if [[ -f "${RECOVERED_FILE}" ]]; then
+  file_size=$(wc -c < "${RECOVERED_FILE}")
+  echo "Recovered log file size: ${file_size} bytes"
 fi
