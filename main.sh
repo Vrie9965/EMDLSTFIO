@@ -86,6 +86,7 @@ fi
 # post it in the front page
 post_response="$(post_fp "${prev_frame}" 2>&1)" || {
 	printf '%s\n' "[ERROR] post_fp failed for frame ${prev_frame}: ${post_response}" >> "${FRMENV_LOG_FILE}"
+	[[ -n "${post_response}" ]] && printf '%s\n' "${post_response}" >&2
 	helper_statfailed "${prev_frame}" "${episode}" 1
 }
 post_id="$(jq -r '.post_id // .id // empty' <<< "${post_response}" 2>/dev/null)"

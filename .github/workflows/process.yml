@@ -1,13 +1,13 @@
 # Don't change this `name` below, the script might broke at some point
 name: "init banner"
 on:
-   workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
- checks:
+  checks:
     runs-on: ubuntu-24.04
     steps:
       - name: "ownership check"
@@ -31,26 +31,60 @@ jobs:
           status="$(echo "${response}" | jq -r '.workflow_runs[].status')"
           if grep -qE 'in_progress' <<< "${status}"; then
             echo -e '> [!CAUTION]'"\n> The bot_runner is still running, The script prevented this workflow to run to avoid conflicts... Cancelling"'!!' >> "${GITHUB_STEP_SUMMARY}"
-            # Cancel Job
             gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
           fi
           : "Ignore"
 
- inits:
+  inits:
     runs-on: ubuntu-24.04
     if: success() && true
     steps:
       - name: "checkout"
         uses: actions/checkout@v4
 
+      - name: "token precheck"
+        env:
+          tok_fb: ${{ secrets.TOK_FB }}
+        run: |
+          . ./config.conf
+          if [[ -z "${tok_fb}" ]]; then
+            printf '%s\n' "TOK_FB is empty." >&2
+            exit 1
+          fi
+          fb_probe="$(curl -sS -w $'\n%{http_code}' "${FRMENV_API_ORIGIN}/me?fields=id,name&access_token=${tok_fb}")"
+          fb_body="$(sed '$d' <<< "${fb_probe}")"
+          fb_status="$(tail -n1 <<< "${fb_probe}")"
+          fb_name="$(jq -r '.name // empty' <<< "${fb_body}" 2>/dev/null)"
+          fb_err_code="$(jq -r '.error.code // empty' <<< "${fb_body}" 2>/dev/null)"
+          fb_err_msg="$(jq -r '.error.message // empty' <<< "${fb_body}" 2>/dev/null)"
+          if [[ "${fb_status}" != "200" ]]; then
+            printf '%s\n' "Token precheck failed (HTTP ${fb_status:-unknown}) [code ${fb_err_code:-unknown}]: ${fb_err_msg:-unknown}" >&2
+            printf '%s\n' "${fb_body}" >&2
+            exit 1
+          fi
+          if [[ -n "${page_name}" ]] && [[ "${fb_name}" != "${page_name}" ]]; then
+            printf '%s\n' "Token precheck failed: page mismatch (expected: ${page_name}, got: ${fb_name:-unknown})" >&2
+            exit 1
+          fi
+          fb_photo_probe="$(curl -sS -w $'\n%{http_code}' "${FRMENV_API_ORIGIN}/me/photos?limit=1&access_token=${tok_fb}")"
+          fb_photo_body="$(sed '$d' <<< "${fb_photo_probe}")"
+          fb_photo_status="$(tail -n1 <<< "${fb_photo_probe}")"
+          fb_photo_err_code="$(jq -r '.error.code // empty' <<< "${fb_photo_body}" 2>/dev/null)"
+          fb_photo_err_msg="$(jq -r '.error.message // empty' <<< "${fb_photo_body}" 2>/dev/null)"
+          if [[ "${fb_photo_status}" != "200" ]]; then
+            printf '%s\n' "Token precheck failed for /me/photos (HTTP ${fb_photo_status:-unknown}) [code ${fb_photo_err_code:-unknown}]: ${fb_photo_err_msg:-unknown}" >&2
+            printf '%s\n' "${fb_photo_body}" >&2
+            exit 1
+          fi
+
       - name: "check status"
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOK }}
         run: |
           if [[ "$(<./fb/frameiterator)" -gt "$(sed -nE 's/.*total_frame="([^"]*)".*/\1/p' config.conf)" ]]; then
-             echo -e '> [!NOTE]'"\n> The Bot was Finished Running" >> "${GITHUB_STEP_SUMMARY}"
-             gh workflow disable trigger.yml --repo ${{ github.repository }}
-             gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
+            echo -e '> [!NOTE]'"\n> The Bot was Finished Running" >> "${GITHUB_STEP_SUMMARY}"
+            gh workflow disable trigger.yml --repo ${{ github.repository }}
+            gh run cancel "${{ github.run_id }}" --repo "${{ github.repository }}"
           fi
 
       - name: "initialize package"

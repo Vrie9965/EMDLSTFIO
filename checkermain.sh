@@ -100,6 +100,21 @@ token_check(){
 			printf '\e[31mERROR\e[0m - %s\n' "${TEMP_ERR_REASON}" >&2
 		else
 			format_table "fb_token" "$(format_noerr "Token is Working")"
+			fb_photo_probe="$(curl -sS -w $'\n%{http_code}' "${FRMENV_API_ORIGIN}/me/photos?limit=1&access_token=${1}")" || true
+			fb_photo_body="$(sed '$d' <<< "${fb_photo_probe}")"
+			fb_photo_status="$(tail -n1 <<< "${fb_photo_probe}")"
+			fb_photo_err_msg="$(jq -r '.error.message // empty' <<< "${fb_photo_body}" 2>/dev/null)"
+			fb_photo_err_code="$(jq -r '.error.code // empty' <<< "${fb_photo_body}" 2>/dev/null)"
+			if [[ "${fb_photo_status}" != "200" ]]; then
+				TEMP_PHOTO_ERR="No photo endpoint access (HTTP ${fb_photo_status:-unknown})"
+				[[ -n "${fb_photo_err_code}" ]] && TEMP_PHOTO_ERR+=" [code ${fb_photo_err_code}]"
+				[[ -n "${fb_photo_err_msg}" ]] && TEMP_PHOTO_ERR+=": ${fb_photo_err_msg}"
+				format_table "fb_photo_access" "$(format_err "${TEMP_PHOTO_ERR}")" && err_state="1"
+				printf '\e[31mERROR\e[0m - %s\n' "${TEMP_PHOTO_ERR}" >&2
+			else
+				format_table "fb_photo_access" "$(format_noerr "Passed")"
+			fi
+			unset fb_photo_probe fb_photo_body fb_photo_status fb_photo_err_msg fb_photo_err_code TEMP_PHOTO_ERR
 		fi
 		unset fb_response fb_body fb_status fb_name fb_err_msg fb_err_code TEMP_ERR_REASON
 	fi

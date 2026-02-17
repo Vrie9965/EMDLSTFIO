@@ -28,13 +28,34 @@ post_randomcrop(){
 }
 
 post_fp(){
-	curl -sfLX POST \
-		--retry 2 \
-		--retry-connrefused \
-		--retry-delay 7 \
-		-F "message=${message}" \
-		-F "source=@${FRMENV_FRAME_LOCATION}/frame_${1}.jpg" \
-	"${FRMENV_API_ORIGIN}/me/photos?access_token=${FRMENV_FBTOKEN}&published=1"
+	local endpoint response response_body response_status
+	local fb_err_type fb_err_code fb_err_msg
+	endpoint="${FRMENV_API_ORIGIN}/me/photos?access_token=${FRMENV_FBTOKEN}&published=1"
+	response="$(
+		curl -sSLX POST \
+			--retry 2 \
+			--retry-connrefused \
+			--retry-delay 7 \
+			-F "message=${message}" \
+			-F "source=@${FRMENV_FRAME_LOCATION}/frame_${1}.jpg" \
+			-w $'\n%{http_code}' \
+		"${endpoint}"
+	)" || {
+		printf '%s\n' "[ERROR] Network failure while posting frame ${1} to ${endpoint}" >&2
+		return 1
+	}
+	response_body="$(sed '$d' <<< "${response}")"
+	response_status="$(tail -n1 <<< "${response}")"
+	if [[ "${response_status}" != "200" ]]; then
+		fb_err_type="$(jq -r '.error.type // empty' <<< "${response_body}" 2>/dev/null)"
+		fb_err_code="$(jq -r '.error.code // empty' <<< "${response_body}" 2>/dev/null)"
+		fb_err_msg="$(jq -r '.error.message // empty' <<< "${response_body}" 2>/dev/null)"
+		printf '%s\n' "[ERROR] post_fp HTTP ${response_status:-unknown} type=${fb_err_type:-unknown} code=${fb_err_code:-unknown} message=${fb_err_msg:-unknown}" >&2
+		[[ -n "${response_body}" ]] && printf '%s\n' "[ERROR] post_fp body: ${response_body}" >&2
+		return 1
+	fi
+	printf '%s\n' "${response_body}"
+	unset endpoint response response_body response_status fb_err_type fb_err_code fb_err_msg
 }
 
 post_commentsubs(){
