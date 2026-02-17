@@ -68,19 +68,47 @@ frames_check(){
 }
 
 token_check(){
-	check_name="$(curl -sLf "${FRMENV_API_ORIGIN}/me?fields=name&access_token=${1}" | jq -r .name)" || true
-	if [[ -n "${page_name}" ]] && [[ "${check_name}" = "${page_name}" ]]; then
-		format_table "fb_token" "$(format_noerr "Token is Working")"
+	if [[ -z "${1}" ]]; then
+		format_table "fb_token" "$(format_err "Token is empty")" && err_state="1"
+		printf '\e[31mERROR\e[0m - %s\n' "Facebook token is empty" >&2
 	else
-		format_table "fb_token" "$(format_err "An error occured")" && err_state="1"
-		printf '\e[31mERROR\e[0m - %s\n' "An error occured" >&2
-	fi
-	if [[ "${gif_post}" = "1" ]]; then
-		if curl -sLf -X HEAD "https://api.giphy.com/v1/gifs/trending?api_key=${2}" -o /dev/null; then
-			format_table "gif_token" "$(format_noerr "Token is Working")"
+		fb_response="$(curl -sS -w $'\n%{http_code}' "${FRMENV_API_ORIGIN}/me?fields=id,name&access_token=${1}")" || true
+		fb_body="$(sed '$d' <<< "${fb_response}")"
+		fb_status="$(tail -n1 <<< "${fb_response}")"
+		fb_name="$(jq -r '.name // empty' <<< "${fb_body}" 2>/dev/null)"
+		fb_err_msg="$(jq -r '.error.message // empty' <<< "${fb_body}" 2>/dev/null)"
+		fb_err_code="$(jq -r '.error.code // empty' <<< "${fb_body}" 2>/dev/null)"
+
+		if [[ "${fb_status}" != "200" ]]; then
+			TEMP_ERR_REASON="Request failed (HTTP ${fb_status:-unknown})"
+			[[ -n "${fb_err_code}" ]] && TEMP_ERR_REASON+=" [code ${fb_err_code}]"
+			[[ -n "${fb_err_msg}" ]] && TEMP_ERR_REASON+=": ${fb_err_msg}"
+			format_table "fb_token" "$(format_err "${TEMP_ERR_REASON}")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "${TEMP_ERR_REASON}" >&2
+		elif [[ -n "${page_name}" ]] && [[ "${fb_name}" != "${page_name}" ]]; then
+			TEMP_ERR_REASON="Token page mismatch (expected: ${page_name}, got: ${fb_name:-unknown})"
+			format_table "fb_token" "$(format_err "${TEMP_ERR_REASON}")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "${TEMP_ERR_REASON}" >&2
 		else
-			format_table "gif_token" "$(format_err "An error occured")" && err_state="1"
-			printf '\e[31mERROR\e[0m - %s\n' "An error occured" >&2
+			format_table "fb_token" "$(format_noerr "Token is Working${fb_name:+ (${fb_name})}")"
+		fi
+		unset fb_response fb_body fb_status fb_name fb_err_msg fb_err_code TEMP_ERR_REASON
+	fi
+
+	if [[ "${gif_post}" = "1" ]]; then
+		if [[ -z "${2}" ]]; then
+			format_table "gif_token" "$(format_err "Token is empty")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "Giphy token is empty" >&2
+		else
+			gif_status="$(curl -sS -o /dev/null -w '%{http_code}' "https://api.giphy.com/v1/gifs/trending?api_key=${2}")"
+			if [[ "${gif_status}" = "200" ]]; then
+				format_table "gif_token" "$(format_noerr "Token is Working")"
+			else
+				TEMP_GIF_ERR="Request failed (HTTP ${gif_status:-unknown})"
+				format_table "gif_token" "$(format_err "${TEMP_GIF_ERR}")" && err_state="1"
+				printf '\e[31mERROR\e[0m - %s\n' "${TEMP_GIF_ERR}" >&2
+			fi
+			unset gif_status TEMP_GIF_ERR
 		fi
 	fi
 }
