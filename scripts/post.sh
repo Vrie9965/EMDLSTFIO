@@ -47,7 +47,10 @@ post_commentsubs(){
 			-F "source=@${commentsub_path}" \
 			-o /dev/null \
 		"${FRMENV_API_ORIGIN}/${FRMENV_FBAPI_VER}/${2}/comments?access_token=${FRMENV_FBTOKEN}" || return 1
+		return 0
 	fi
+	# Missing commentsub image is not an error; skip silently.
+	return 0
 }
 
 post_album(){

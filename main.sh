@@ -76,8 +76,18 @@ fi
 # Refer to config.conf
 message="$(eval "printf '%s' \"$(sed -E 's_\{\\n\}_\n_g;s_(\{[^\x7d]*\})_\$\1_g' <<< "${message}"\")")"
 
+# Verify frame file exists before sending request.
+frame_path="${FRMENV_FRAME_LOCATION}/frame_${prev_frame}.jpg"
+if [[ ! -s "${frame_path}" ]]; then
+	printf '%s\n' "[ERROR] Missing frame image: ${frame_path}" >> "${FRMENV_LOG_FILE}"
+	helper_statfailed "${prev_frame}" "${episode}" 1
+fi
+
 # post it in the front page
-post_response="$(post_fp "${prev_frame}")" || helper_statfailed "${prev_frame}" "${episode}" 1
+post_response="$(post_fp "${prev_frame}" 2>&1)" || {
+	printf '%s\n' "[ERROR] post_fp failed for frame ${prev_frame}: ${post_response}" >> "${FRMENV_LOG_FILE}"
+	helper_statfailed "${prev_frame}" "${episode}" 1
+}
 post_id="$(jq -r '.post_id // .id // empty' <<< "${post_response}" 2>/dev/null)"
 [[ -n "${post_id}" ]] || post_id="$(grep -Po '(?=[0-9])(.*)(?=\",\")' <<< "${post_response}" | head -n1)"
 [[ -n "${post_id}" ]] || { printf '%s\n' "[ERROR] Empty post_id response for frame ${prev_frame}" >> "${FRMENV_LOG_FILE}" ; helper_statfailed "${prev_frame}" "${episode}" 1 ;}

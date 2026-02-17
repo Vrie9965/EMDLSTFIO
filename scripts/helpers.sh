@@ -6,14 +6,11 @@
 helper_statfailed(){
 	if [[ "$#" -gt 2 ]]; then
 		printf '%s\n' "[X] Frame: ${1}, Episode ${2}" >> "${FRMENV_LOG_FILE}"
+		printf '%s\n' "[ERROR] Posting failed on frame ${1}, episode ${2}" >&2
 		shift 2
 	fi
+	printf '%s\n' "[ERROR] Exiting with code ${1}" >&2
 	exit "${1}"
-}
-
-# Backward-compatible alias used by older call sites.
-failed(){
-	helper_statfailed "$@"
 }
 
 helper_depcheck(){

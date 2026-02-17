@@ -64,6 +64,15 @@ frames_check(){
 		printf '\e[31mERROR\e[0m - %s\n' "Invalid format" >&2
 	else
 		format_table "frameiterator" "$(format_noerr "Valid format")"
+		current_iter="$(<fb/frameiterator)"
+		current_frame_path="frames/frame_${current_iter}.jpg"
+		if [[ ! -s "${current_frame_path}" ]]; then
+			format_table "current_frame_file" "$(format_err "Missing frame_${current_iter}.jpg")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "Missing or empty ${current_frame_path}" >&2
+		else
+			format_table "current_frame_file" "$(format_noerr "Found frame_${current_iter}.jpg")"
+		fi
+		unset current_iter current_frame_path
 	fi
 }
 

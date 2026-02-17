@@ -15,6 +15,10 @@ for ((i=1;i<=fph;i++)); do
     if [[ "${error_code}" == 12 ]]; then
         exit 0
     elif [[ "${error_code}" != "0" ]]; then
+        if [[ -f "${FRMENV_LOG_FILE}" ]]; then
+            printf '%s\n' "[ERROR] Recent fb/log.txt entries:" >&2
+            tail -n 10 "${FRMENV_LOG_FILE}" >&2 || true
+        fi
         bash img_process.sh "failed" "${time_started}" || exit 1
         exit "${error_code}"
     fi
