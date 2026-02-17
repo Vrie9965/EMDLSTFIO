@@ -37,8 +37,8 @@ sub_check(){
 			format_table "commentsubs" "$(format_err "Directory not found")" && err_state="1"
 			printf '\e[31mERROR\e[0m - %s\n' "Directory not found" >&2
 		elif ! compgen -G "${FRMENV_COMMENTSUBS_LOCATION}/frame_*.jpg" > /dev/null; then
-			format_table "commentsubs" "$(format_err "No frame_*.jpg files found")" && err_state="1"
-			printf '\e[31mERROR\e[0m - %s\n' "No frame_*.jpg files found" >&2
+			format_table "commentsubs" "$(format_err "No commentsub images found")" && err_state="1"
+			printf '\e[31mERROR\e[0m - %s\n' "No commentsub images found" >&2
 		else
 			format_table "commentsubs" "$(format_noerr "Passed")"
 		fi
@@ -85,7 +85,7 @@ token_check(){
 	fi
 }
 
-checkif season episode total_frame fph mins delay_action
+checkif name season episode total_frame fph mins delay_action
 sub_check
 frames_check
 token_check "${FRMENV_FBTOKEN}" "${FRMENV_GIFTOKEN}"
