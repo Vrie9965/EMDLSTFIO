@@ -46,7 +46,7 @@ FRMENV_FBTOKEN="${1:-${FRMENV_FBTOKEN}}"
 FRMENV_GIFTOKEN="${2:-${FRMENV_GIFTOKEN}}"
 
 # Check all the dependencies if installed
-helper_depcheck awk sed grep curl bc jq || failed 1
+helper_depcheck awk sed grep curl bc jq || helper_statfailed 1
 
 # Create DIRs and files for iterator and temps/logs
 [[ -d ./fb ]] || mkdir ./fb
@@ -77,29 +77,38 @@ fi
 message="$(eval "printf '%s' \"$(sed -E 's_\{\\n\}_\n_g;s_(\{[^\x7d]*\})_\$\1_g' <<< "${message}"\")")"
 
 # post it in the front page
-post_id="$(post_fp "${prev_frame}" | grep -Po '(?=[0-9])(.*)(?=\",\")')" || failed "${prev_frame}" "${episode}"
+post_response="$(post_fp "${prev_frame}")" || helper_statfailed "${prev_frame}" "${episode}" 1
+post_id="$(jq -r '.post_id // .id // empty' <<< "${post_response}" 2>/dev/null)"
+[[ -n "${post_id}" ]] || post_id="$(grep -Po '(?=[0-9])(.*)(?=\",\")' <<< "${post_response}" | head -n1)"
+[[ -n "${post_id}" ]] || { printf '%s\n' "[ERROR] Empty post_id response for frame ${prev_frame}" >> "${FRMENV_LOG_FILE}" ; helper_statfailed "${prev_frame}" "${episode}" 1 ;}
+unset post_response
 
 if [[ "${sub_posting}" = "1" ]]; then
-	post_commentsubs "${prev_frame}" "${post_id}"
+	post_commentsubs "${prev_frame}" "${post_id}" || helper_statfailed "${prev_frame}" "${episode}" 1
 fi
 
 # Post images in Albums
-[[ -z "${album}" ]] || post_album "${prev_frame}"
+[[ -z "${album}" ]] || post_album "${prev_frame}" || helper_statfailed "${prev_frame}" "${episode}" 1
 
 # Addons, Random Crop from frame
 if [[ "${rand_post}" = "1" ]]; then
 	sleep "${delay_action}" # Delay
-	post_randomcrop "${prev_frame}" "${post_id}"
+	post_randomcrop "${prev_frame}" "${post_id}" || helper_statfailed "${prev_frame}" "${episode}" 1
 fi
 
 # Addons, GIF posting
 if [[ "${gif_post}" = "1" ]]; then
 	sleep "${delay_action}" # Delay
-	[[ -n "${giphy_token}" ]] && [[ "${prev_frame}" -gt "${gif_prev_framecount}" ]] && post_gif "$((prev_frame - gif_prev_framecount))" "${prev_frame}" "${post_id}"
+	if [[ -n "${FRMENV_GIFTOKEN}" ]] && [[ "${prev_frame}" -gt "${gif_prev_framecount}" ]]; then
+		post_gif "$((prev_frame - gif_prev_framecount))" "${prev_frame}" "${post_id}" || helper_statfailed "${prev_frame}" "${episode}" 1
+	fi
 fi
 
 # This will note that the Post was success, without errors and append it to log file
-printf '%s %s\n' "[√] Frame: ${prev_frame}, Episode ${episode}" "https://facebook.com/${post_id}" >> "${FRMENV_LOG_FILE}"
+log_entry="[√] Frame: ${prev_frame}, Episode ${episode} https://facebook.com/${post_id}"
+[[ -n "${log_entry//[[:space:]]/}" ]] || helper_statfailed "${prev_frame}" "${episode}" 1
+printf '%s\n' "${log_entry}" >> "${FRMENV_LOG_FILE}" || helper_statfailed "${prev_frame}" "${episode}" 1
+unset log_entry
 
 # Lastly, This will increment prev_frame variable and redirect it to file
 next_frame="$((prev_frame+=1))"

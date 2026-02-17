@@ -14,6 +14,12 @@ create_image(){
 	width="350"
 	progress_width="$(((width * percentage / 100) - 10))"
 	progress_width_end="$(((width * percentage_end / 100) - 10))"
+	min_bar="10"
+	max_bar="$((width - 10))"
+	[[ "${progress_width}" -lt "${min_bar}" ]] && progress_width="${min_bar}"
+	[[ "${progress_width_end}" -lt "${min_bar}" ]] && progress_width_end="${min_bar}"
+	[[ "${progress_width}" -gt "${max_bar}" ]] && progress_width="${max_bar}"
+	[[ "${progress_width_end}" -gt "${max_bar}" ]] && progress_width_end="${max_bar}"
  
 	[[ "${8}" = "true" ]] && percentage="${percentage_end}"
  

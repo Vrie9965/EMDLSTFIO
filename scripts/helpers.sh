@@ -11,6 +11,11 @@ helper_statfailed(){
 	exit "${1}"
 }
 
+# Backward-compatible alias used by older call sites.
+failed(){
+	helper_statfailed "$@"
+}
+
 helper_depcheck(){
 	for deppack; do
 		if ! command -v "${deppack}" >/dev/null ; then
