@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2250
 # File: EOFIO12/scripts/reshare_random.sh
 : "${FRMENV_FBTOKEN:=${TOK_FB:-}}"
 if [[ -z "$FRMENV_FBTOKEN" ]]; then

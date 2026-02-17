@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2250
 # File: EOFIO12/scripts/recover_logs.sh
 # Recovers missing episode logs from Facebook page posts
 
@@ -44,7 +45,7 @@ echo "Starting recovery process..."
 echo "Configuration check:"
 echo "  API Origin: ${FRMENV_API_ORIGIN}"
 echo "  API Version: ${FRMENV_FBAPI_VER}"
-echo "  Token present: $([ -n "$FRMENV_FBTOKEN" ] && echo 'YES' || echo 'NO')"
+echo "  Token present: $( [[ -n "${FRMENV_FBTOKEN}" ]] && echo 'YES' || echo 'NO')"
 echo ""
 
 total_recovered=0
@@ -116,7 +117,14 @@ while [[ -n "$url" ]] && [[ $page_count -lt 2 ]]; do
           
           # Check for duplicate
           frame_key="01-${frame_num}"
-          if [[ ! " ${recovered_frames[@]} " =~ " ${frame_key} " ]]; then
+          frame_seen=0
+          for recovered_frame in "${recovered_frames[@]}"; do
+            if [[ "${recovered_frame}" == "${frame_key}" ]]; then
+              frame_seen=1
+              break
+            fi
+          done
+          if [[ "${frame_seen}" -eq 0 ]]; then
             fb_url="https://facebook.com/${post_id}"
             log_entry="[√] Frame: ${frame_num}, Episode 01 ${fb_url}"
             echo "$log_entry" >> "$RECOVERED_FILE"
