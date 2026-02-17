@@ -1,0 +1,29 @@
+name: "random reshare"
+
+on:
+  schedule:
+    - cron: "0 7,11,15,19,23,3 * * *"
+  workflow_dispatch:
+
+jobs:
+  reshare:
+    runs-on: ubuntu-latest
+    env:
+      FRMENV_FBTOKEN: ${{ secrets.TOK_FB }}
+      FRMENV_API_ORIGIN: "https://graph.facebook.com"
+      FRMENV_FBAPI_VER: "v23.0"
+
+    steps:
+      - name: "checkout repo"
+        uses: actions/checkout@v4
+
+      - name: "check token"
+        run: |
+          if [[ -z "$FRMENV_FBTOKEN" ]]; then
+            echo "no tokne"
+            exit 1
+          fi
+          echo "Token loaded: ${FRMENV_FBTOKEN:0:4}****"
+
+      - name: "run random reshare"
+        run: bash ./scripts/reshare_random.sh

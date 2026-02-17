@@ -1,0 +1,61 @@
+name: Recover Missing Episode Logs
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly on Sunday at midnight (optional)
+
+jobs:
+  recover-logs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+      
+      - name: Make script executable
+        run: chmod +x scripts/recover_logs.sh
+      
+      - name: Run recovery script
+        env:
+          FRMENV_FBTOKEN: ${{ secrets.TOK_FB }}
+          TOK_FB: ${{ secrets.TOK_FB }}
+        run: |
+          bash scripts/recover_logs.sh
+      
+      - name: Upload recovered log as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovered-log
+          path: fb/recovered_log.txt
+          retention-days: 30
+      
+      - name: Check if recovered log exists and has content
+        id: check_log
+        run: |
+          if [ -f fb/recovered_log.txt ] && [ -s fb/recovered_log.txt ]; then
+            echo "has_content=true" >> $GITHUB_OUTPUT
+            echo "Recovered log has content"
+            wc -l fb/recovered_log.txt
+          else
+            echo "has_content=false" >> $GITHUB_OUTPUT
+            echo "No content recovered or file not found"
+          fi
+      
+      - name: Commit and push recovered log (optional)
+        if: steps.check_log.outputs.has_content == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add fb/recovered_log.txt
+          git diff --staged --quiet || git commit -m "Add recovered episode logs"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
