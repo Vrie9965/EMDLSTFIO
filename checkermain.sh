@@ -90,7 +90,7 @@ token_check(){
 			format_table "fb_token" "$(format_err "${TEMP_ERR_REASON}")" && err_state="1"
 			printf '\e[31mERROR\e[0m - %s\n' "${TEMP_ERR_REASON}" >&2
 		else
-			format_table "fb_token" "$(format_noerr "Token is Working${fb_name:+ (${fb_name})}")"
+			format_table "fb_token" "$(format_noerr "Token is Working")"
 		fi
 		unset fb_response fb_body fb_status fb_name fb_err_msg fb_err_code TEMP_ERR_REASON
 	fi
