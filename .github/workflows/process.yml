@@ -92,7 +92,10 @@ jobs:
       - name: "initialize package"
         run: |
           (echo "set man-db/auto-update false" | sudo debconf-communicate; sudo dpkg-reconfigure man-db) &>/dev/null
-          sudo apt install imagemagick -y
+          export DEBIAN_FRONTEND=noninteractive
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get update -o Acquire::Retries=5
+          sudo apt-get install -y --fix-missing --no-install-recommends imagemagick
 
       - name: "execute"
         run: bash img_process.sh "in_progress"
