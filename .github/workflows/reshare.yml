@@ -9,7 +9,7 @@ jobs:
     env:
       FRMENV_FBTOKEN: ${{ secrets.TOK_FB }}
       FRMENV_API_ORIGIN: "https://graph.facebook.com"
-      FRMENV_FBAPI_VER: "v23.0"
+      FRMENV_FBAPI_VER: "v24.0"
 
     steps:
       - name: "checkout repo"
