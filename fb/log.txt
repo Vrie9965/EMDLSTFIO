@@ -11094,3 +11094,13 @@
 [√] Frame: 38, Episode 02 https://facebook.com/979908845209059_122120888949270395
 [√] Frame: 39, Episode 02 https://facebook.com/979908845209059_122120889321270395
 [√] Frame: 40, Episode 02 https://facebook.com/979908845209059_122120889717270395
+[√] Frame: 41, Episode 02 https://facebook.com/979908845209059_122120909061270395
+[√] Frame: 42, Episode 02 https://facebook.com/979908845209059_122120909481270395
+[√] Frame: 43, Episode 02 https://facebook.com/979908845209059_122120909889270395
+[√] Frame: 44, Episode 02 https://facebook.com/979908845209059_122120910291270395
+[√] Frame: 45, Episode 02 https://facebook.com/979908845209059_122120910645270395
+[√] Frame: 46, Episode 02 https://facebook.com/979908845209059_122120910987270395
+[√] Frame: 47, Episode 02 https://facebook.com/979908845209059_122120911443270395
+[√] Frame: 48, Episode 02 https://facebook.com/979908845209059_122120911797270395
+[√] Frame: 49, Episode 02 https://facebook.com/979908845209059_122120912163270395
+[√] Frame: 50, Episode 02 https://facebook.com/979908845209059_122120912523270395
