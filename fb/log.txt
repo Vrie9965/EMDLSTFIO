@@ -15183,3 +15183,13 @@
 [√] Frame: 4127, Episode 02 https://facebook.com/979908845209059_122128976115270395
 [√] Frame: 4128, Episode 02 https://facebook.com/979908845209059_122128976673270395
 [√] Frame: 4129, Episode 02 https://facebook.com/979908845209059_122128977189270395
+[√] Frame: 1, Episode 03 https://facebook.com/979908845209059_122129323197270395
+[√] Frame: 2, Episode 03 https://facebook.com/979908845209059_122129323755270395
+[√] Frame: 3, Episode 03 https://facebook.com/979908845209059_122129324289270395
+[√] Frame: 4, Episode 03 https://facebook.com/979908845209059_122129324889270395
+[√] Frame: 5, Episode 03 https://facebook.com/979908845209059_122129325345270395
+[√] Frame: 6, Episode 03 https://facebook.com/979908845209059_122129325933270395
+[√] Frame: 7, Episode 03 https://facebook.com/979908845209059_122129326521270395
+[√] Frame: 8, Episode 03 https://facebook.com/979908845209059_122129327205270395
+[√] Frame: 9, Episode 03 https://facebook.com/979908845209059_122129327673270395
+[√] Frame: 10, Episode 03 https://facebook.com/979908845209059_122129328129270395
